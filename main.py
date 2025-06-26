@@ -5,12 +5,16 @@ from glob import glob
 
 from PySide2 import QtWidgets,QtCore,QtGui
 from PySide2.QtWidgets import QMainWindow, QFileDialog, QMessageBox
-from PySide2.QtCore import QDir, QTimer,Slot
+from PySide2.QtCore import QDir, QTimer,Slot,QUrl
 from PySide2.QtGui import QPixmap,QImage
+from PySide2.QtMultimedia import QMediaPlayer, QMediaContent
+
 from ui_mainwindow import Ui_MainWindow
 import cv2
 import myframe
-import playsound
+from playsound import playsound
+import csv
+import datetime
 
 # 定义变量
 
@@ -36,12 +40,18 @@ Roll = 0                    #整个循环内的帧技术
 Rolleye = 0                 #循环内闭眼帧数
 Rollmouth = 0               #循环内打哈欠数
 
+# 轮次计数器
+Epoch = 1  # 轮次计数器
+
+isAlertOn=True  # 是否开启报警音频
+
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
         self.setupUi(self)
         # 打开文件类型，用于类的定义
         self.f_type = 0
+
 
     def window_init(self):
         # 设置控件属性
@@ -83,10 +93,11 @@ class CamConfig:
         Ui_MainWindow.printf(window,"")
         Ui_MainWindow.printf(window,"开始执行疲劳检测...")
         window.statusbar.showMessage("正在使用摄像头...")
+
     def show_pic(self):
         # 全局变量
         # 在函数中引入定义的全局变量
-        global EYE_AR_THRESH,EYE_AR_CONSEC_FRAMES,MAR_THRESH,MOUTH_AR_CONSEC_FRAMES,COUNTER,TOTAL,mCOUNTER,mTOTAL,ActionCOUNTER,Roll,Rolleye,Rollmouth
+        global EYE_AR_THRESH,EYE_AR_CONSEC_FRAMES,MAR_THRESH,MOUTH_AR_CONSEC_FRAMES,COUNTER,TOTAL,mCOUNTER,mTOTAL,ActionCOUNTER,Roll,Rolleye,Rollmouth,Epoch
 
         # 读取摄像头的一帧画面
         success, frame = self.cap.read()
@@ -132,6 +143,10 @@ class CamConfig:
                 ActionCOUNTER = 0
 
             # 疲劳判断
+            # 从 UI 中读取阈值
+            EYE_AR_THRESH = window.eye_thresh_slider.value() / 100
+            MAR_THRESH = window.mouth_thresh_slider.value() / 100
+
             # 眨眼判断
             if eye < EYE_AR_THRESH:
                 # 如果眼睛开合程度小于设定好的阈值
@@ -167,30 +182,70 @@ class CamConfig:
             # 疲劳模型以150帧为一个循环
             # 每一帧Roll加1
             Roll += 1
+
             # 当检测满150帧时，计算模型得分
             if Roll == 150:
                 # 计算Perclos模型得分
                 perclos = (Rolleye/Roll) + (Rollmouth/Roll)*0.2
                 # 在前端UI输出perclos值
-                Ui_MainWindow.printf(window,"过去150帧中，Perclos得分为"+str(round(perclos,3)))
+                Ui_MainWindow.printf(window,"第"+str(Epoch)+"轮检测，Perclos得分为"+str(round(perclos,3)))
                 # 当过去的150帧中，Perclos模型得分超过0.38时，判断为疲劳状态
                 if perclos > 0.38:
                     Ui_MainWindow.printf(window,"当前处于疲劳状态")
                     window.label_10.setText("<font color=red>疲劳！！！</font>")
-                    playsound(f'{self.resource_folder}/audio/alarm_80.mp3')
+
+                    # 播放报警音频，音频较短循环3次
+                    if isAlertOn:
+                        for _ in range(3):
+                            playsound(f'resources/audio/alarm_80.mp3')
+
+
                     Ui_MainWindow.printf(window,"")
+                    # 添加报警记录到 UI 报警列表
+                    alarm_msg = f"{datetime.datetime.now().strftime('%H:%M:%S')} - 疲劳报警 - Perclos值：{round(perclos, 3)}"
+                    if hasattr(window, "alert_list"):
+                        window.alert_list.addItem(alarm_msg)
                 else:
                     Ui_MainWindow.printf(window,"当前处于清醒状态")
                     window.label_10.setText("清醒")
                     Ui_MainWindow.printf(window,"")
-
+                # 更新图表（只更新主窗口存在曲线对象时）
+                if hasattr(window, 'perclos_curve'):
+                    window.perclos_x.append(len(window.perclos_x) + 1)
+                    window.perclos_y.append(perclos)
+                    if len(window.perclos_x) > 10:
+                        window.perclos_x = window.perclos_x[1:]
+                        window.perclos_y = window.perclos_y[1:]
+                    window.perclos_curve.setData(window.perclos_x, window.perclos_y)
                 # 归零
                 # 将三个计数器归零
                 # 重新开始新一轮的检测
+                Epoch += 1  # 每次检测完毕，轮次加1
                 Roll = 0
                 Rolleye = 0
                 Rollmouth = 0
                 Ui_MainWindow.printf(window,"重新开始执行疲劳检测...")
+                # 记录检测日志
+                log_dir = os.path.join(os.getcwd(), "logs")
+                os.makedirs(log_dir, exist_ok=True)
+                log_path = os.path.join(log_dir, "history_log.csv")
+
+                # 写入CSV日志
+                log_entry = [
+                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    Epoch-1,
+                    round(perclos, 3),
+                    "疲劳" if perclos > 0.38 else "清醒"
+                ]
+
+                # 如果文件不存在，添加表头
+                file_exists = os.path.isfile(log_path)
+                with open(log_path, mode='a', newline='', encoding='utf-8') as file:
+                    writer = csv.writer(file)
+                    if not file_exists:
+                        writer.writerow(["时间", "检测轮", "Perclos值", "状态"])
+                    writer.writerow(log_entry)
+
 
 def CamConfig_init():
     window.f_type = CamConfig()
@@ -202,3 +257,6 @@ if __name__ == '__main__':
     window.window_init()
     window.show()
     sys.exit(app.exec_())
+
+
+    window.alert_list.addItem(f"{datetime.now().strftime('%H:%M:%S')} - 疲劳警报触发")

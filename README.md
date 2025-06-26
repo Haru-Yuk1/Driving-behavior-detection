@@ -30,6 +30,9 @@ pip install -r requirements.txt
 对项目的一些代码进行了简单修改
 
 
+## 数据集
+
+[数据集地址](https://aistudio.baidu.com/datasetdetail/80631/2)
 
 ## 致谢
 
