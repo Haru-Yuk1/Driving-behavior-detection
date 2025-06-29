@@ -12,9 +12,10 @@ from PySide2.QtMultimedia import QMediaPlayer, QMediaContent
 from ui_mainwindow import Ui_MainWindow
 import cv2
 import myframe
-from playsound import playsound
 import csv
 import datetime
+import pygame
+import time
 
 # 定义变量
 
@@ -196,8 +197,12 @@ class CamConfig:
 
                     # 播放报警音频，音频较短循环3次
                     if isAlertOn:
-                        for _ in range(3):
-                            playsound(f'resources/audio/alarm_80.mp3')
+                        # 初始化
+                        pygame.mixer.init()
+                        # 加载音频
+                        sound = pygame.mixer.Sound("resources/audio/alarm_80.mp3")
+                        # 播放3次（含原声，共播放3次）
+                        sound.play(loops=2)
 
 
                     Ui_MainWindow.printf(window,"")

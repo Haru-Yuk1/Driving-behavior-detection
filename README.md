@@ -34,6 +34,14 @@ pip install -r requirements.txt
 
 [数据集地址](https://aistudio.baidu.com/datasetdetail/80631/2)
 
+## 训练
+通过Yolov5训练
+官方下载相应代码和模型
+
+https://github.com/ultralytics/yolov5/releases
+
+把代码更新到新的yolov5版本 2025/6/28
+
 ## 致谢
 
 本项目由[该项目](https://github.com/JingyibySUTsoftware/Yolov5-deepsort-driverDistracted-driving-behavior-detection/tree/V1.0)修改而来，进行了简单的修改，增加了依赖配置，配置更简单。

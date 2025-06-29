@@ -634,13 +634,13 @@ class Ui_MainWindow(object):
                    """)
         layout.addWidget(title)
 
-        # 警报音设置
+        # 警报音设置 TODO :实际实现，再加个选择报警音？
         self.alarm_checkbox = QCheckBox("启用报警音")
         self.alarm_checkbox.setChecked(True)
         self.alarm_checkbox.setStyleSheet("font-size: 16px;")
         layout.addWidget(self.alarm_checkbox)
 
-        # 眼睛阈值调整
+        # 眼睛阈值调整 TODO：实际实现
         self.eye_thresh_slider = QSlider(Qt.Horizontal)
         self.eye_thresh_slider.setMinimum(5)
         self.eye_thresh_slider.setMaximum(30)
@@ -651,7 +651,7 @@ class Ui_MainWindow(object):
         layout.addWidget(self.eye_thresh_label)
         layout.addWidget(self.eye_thresh_slider)
 
-        # 嘴巴阈值调整
+        # 嘴巴阈值调整 TODO：实际实现
         self.mouth_thresh_slider = QSlider(Qt.Horizontal)
         self.mouth_thresh_slider.setMinimum(30)
         self.mouth_thresh_slider.setMaximum(100)
