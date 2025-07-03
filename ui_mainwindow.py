@@ -374,6 +374,7 @@ class Ui_MainWindow(object):
                 background-color: #f8f9fa;
                 border-radius: 12px;
                 border: 1px solid #e9ecef;
+                height: 80px;
                 padding: 18px;
             }
             QLabel {
@@ -630,6 +631,7 @@ class Ui_MainWindow(object):
                            font-size: 28px;
                            font-weight: bold;
                            padding: 20px;
+                           margin-bottom: 20px;
                        }
                    """)
         layout.addWidget(title)
@@ -637,7 +639,7 @@ class Ui_MainWindow(object):
         # 警报音设置 TODO :实际实现，再加个选择报警音？
         self.alarm_checkbox = QCheckBox("启用报警音")
         self.alarm_checkbox.setChecked(True)
-        self.alarm_checkbox.setStyleSheet("font-size: 16px;")
+        self.alarm_checkbox.setStyleSheet("font-size: 20px;")
         layout.addWidget(self.alarm_checkbox)
 
         # 眼睛阈值调整 TODO：实际实现
@@ -702,11 +704,11 @@ class Ui_MainWindow(object):
         btn_layout = QHBoxLayout()
         self.btn_clear_alerts = QPushButton("🧹 清空记录")
         self.btn_clear_alerts.setFixedWidth(120)
-        self.btn_clear_alerts.setStyleSheet("font-size: 14px; padding: 6px;")
+        self.btn_clear_alerts.setStyleSheet("font-size: 18px; padding: 6px;")
 
         self.btn_export_alerts = QPushButton("📁 导出报警记录")
         self.btn_export_alerts.setFixedWidth(160)
-        self.btn_export_alerts.setStyleSheet("font-size: 14px; padding: 6px;")
+        self.btn_export_alerts.setStyleSheet("font-size: 18px; padding: 6px;")
 
         btn_layout.addWidget(self.btn_clear_alerts)
         btn_layout.addWidget(self.btn_export_alerts)
