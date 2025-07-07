@@ -17,6 +17,8 @@ import datetime
 import pygame
 import time
 
+
+from speed_client import SpeedClientThread  # 如果你放在 speed_client.py 中
 # 定义变量
 
 # 眼睛闭合判断
@@ -46,12 +48,20 @@ Epoch = 1  # 轮次计数器
 
 isAlertOn=True  # 是否开启报警音频
 
+perclos_counter = 0  # 用于记录Perclos模型的计数器
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
+
+
         self.setupUi(self)
+
         # 打开文件类型，用于类的定义
         self.f_type = 0
+        # 启动速度接收线程
+        self.speed_thread = SpeedClientThread(self)
+        self.speed_thread.speed_signal.connect(self.update_speed)  # 💥 连接信号到槽
+        self.speed_thread.start()
 
 
     def window_init(self):
@@ -98,7 +108,7 @@ class CamConfig:
     def show_pic(self):
         # 全局变量
         # 在函数中引入定义的全局变量
-        global EYE_AR_THRESH,EYE_AR_CONSEC_FRAMES,MAR_THRESH,MOUTH_AR_CONSEC_FRAMES,COUNTER,TOTAL,mCOUNTER,mTOTAL,ActionCOUNTER,Roll,Rolleye,Rollmouth,Epoch
+        global EYE_AR_THRESH,EYE_AR_CONSEC_FRAMES,MAR_THRESH,MOUTH_AR_CONSEC_FRAMES,COUNTER,TOTAL,mCOUNTER,mTOTAL,ActionCOUNTER,Roll,Rolleye,Rollmouth,Epoch,perclos_counter
 
         # 读取摄像头的一帧画面
         success, frame = self.cap.read()
@@ -214,14 +224,18 @@ class CamConfig:
                     Ui_MainWindow.printf(window,"当前处于清醒状态")
                     window.label_10.setText("清醒")
                     Ui_MainWindow.printf(window,"")
+
                 # 更新图表（只更新主窗口存在曲线对象时）
                 if hasattr(window, 'perclos_curve'):
-                    window.perclos_x.append(len(window.perclos_x) + 1)
+                    window.perclos_x.append(perclos_counter)
+
                     window.perclos_y.append(perclos)
+                    perclos_counter += 1
                     if len(window.perclos_x) > 10:
                         window.perclos_x = window.perclos_x[1:]
                         window.perclos_y = window.perclos_y[1:]
                     window.perclos_curve.setData(window.perclos_x, window.perclos_y)
+
                 # 归零
                 # 将三个计数器归零
                 # 重新开始新一轮的检测
@@ -261,7 +275,9 @@ if __name__ == '__main__':
     window = MainWindow()
     window.window_init()
     window.show()
+
     sys.exit(app.exec_())
+
 
 
     window.alert_list.addItem(f"{datetime.now().strftime('%H:%M:%S')} - 疲劳警报触发")

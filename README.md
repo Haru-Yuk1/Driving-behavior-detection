@@ -30,6 +30,7 @@ pip install -r requirements.txt
 
 我修改了一点ui设计，将数据集上传
 
+
 ### 界面如下
 1. 首页：展示视频及相关消息
 ![1.png](images/1.png)
@@ -48,12 +49,15 @@ pip install -r requirements.txt
 
 ## 训练
 通过Yolov5训练
-官方下载相应代码和模型
+官方下载相应代码和模型，这里我用的是yolov5s 这个模型
 
 https://github.com/ultralytics/yolov5/releases
 
 把代码更新到新的yolov5版本 2025/6/28
 
+
+## 
+本人不是
 ## 致谢
 
 本项目由[该项目](https://github.com/JingyibySUTsoftware/Yolov5-deepsort-driverDistracted-driving-behavior-detection/tree/V1.0)修改而来，进行了简单的修改，增加了依赖配置，配置更简单。

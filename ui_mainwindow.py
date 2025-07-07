@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+import datetime
 
+import pygame
 ################################################################################
 ## 主窗口界面
-## 基于原始UI文件改进，添加了现代化样式和更好的布局
+## 基于原始UI文件改进
 ## 主要功能包括：
 ## - 左侧TabBar导航
 ## - 右侧内容区域使用堆叠窗口管理不同页面
@@ -18,11 +20,12 @@ import pyqtgraph as pg
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
+        self.speed_counter = 0  # 初始化速度计数器
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
         # 设置窗口属性
         MainWindow.resize(1600, 1300)  # 增加宽度以适应左侧TabBar
-        MainWindow.setMinimumSize(QSize(1300, 1200))
+        MainWindow.setMinimumSize(QSize(1000, 1000))
 
         # 设置窗口图标和标题
         MainWindow.setWindowTitle("车载驾驶员行为监控系统")
@@ -237,28 +240,32 @@ class Ui_MainWindow(object):
 
     def create_monitor_page(self):
         """创建主监控页面"""
+        # 页面创建与标题区域
         page = QWidget()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(20)
+        layout.setSpacing(10)
 
-        # 标题区域
+        # 标题区域 - 高度优化
         self.title_frame = QFrame()
         self.title_frame.setStyleSheet("""
             QFrame {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0, 
                     stop:0 #667eea, stop:1 #764ba2);
                 border-radius: 10px;
-                padding: 15px;
+                padding: 10px;  /* 减小内边距 */
             }
         """)
         self.title_layout = QHBoxLayout(self.title_frame)
+        self.title_layout.setContentsMargins(10, 5, 10, 5)  # 减少布局边距
+        self.title_layout.setSpacing(8)  # 减小元素间距
 
+        # 主标题 - 高度优化
         self.title_label = QLabel("车载驾驶员行为监控系统")
         self.title_label.setStyleSheet("""
             QLabel {
                 color: white;
-                font-size: 24px;
+                font-size: 20px;  /* 减小字体大小 */
                 font-weight: bold;
                 background: none;
             }
@@ -266,12 +273,12 @@ class Ui_MainWindow(object):
         self.title_layout.addWidget(self.title_label)
         self.title_layout.addStretch()
 
-        # 状态指示器
+        # 状态指示器 - 高度优化
         self.status_text = QLabel("系统就绪")
         self.status_text.setStyleSheet("""
             QLabel {
                 color: white;
-                font-size: 18px;
+                font-size: 16px;  /* 减小字体大小 */
                 background: none;
             }
         """)
@@ -279,7 +286,7 @@ class Ui_MainWindow(object):
         self.status_indicator.setStyleSheet("""
             QLabel {
                 color: #2ecc71;
-                font-size: 30px;
+                font-size: 24px;  /* 减小指示灯大小 */
                 background: none;
             }
         """)
@@ -374,81 +381,128 @@ class Ui_MainWindow(object):
                 background-color: #f8f9fa;
                 border-radius: 12px;
                 border: 1px solid #e9ecef;
-                height: 80px;
+                height: 120px;
                 padding: 18px;
             }
             QLabel {
                 background: none;
                 color: #495057;
                 font-size: 18px;
+                align: center;
             }
         """
 
-        # 基本信息卡片
+        # 修改卡片样式 - 移除固定高度
+        card_style = """
+            QFrame {
+                background-color: #f8f9fa;
+                border-radius: 12px;
+                border: 1px solid #e9ecef;
+                padding: 18px;
+            }
+            QLabel {
+                background: none;
+                color: #495057;
+                font-size: 18px;
+                align: center;
+            }
+        """
+
+        # 基本信息卡片 - 添加拉伸因子和布局属性
         self.info_card1 = QFrame()
         self.info_card1.setStyleSheet(card_style)
         self.info_layout1 = QHBoxLayout(self.info_card1)
-        self.info_card1.setMinimumWidth(430)
+        self.info_layout1.setContentsMargins(10, 5, 10, 5)  # 减少边距
 
+        # 设置拉伸因子确保标签随空间扩展
         self.label_2 = QLabel("疲劳检测:")
         self.label_2.setStyleSheet("font-weight: bold; color: #6c757d; font-size: 18px;")
+        self.label_2.setAlignment(Qt.AlignCenter)  # 居中对齐
+
         self.label_10 = QLabel("清醒")
         self.label_10.setStyleSheet("color: #008000; font-size: 18px;")
+        self.label_10.setAlignment(Qt.AlignCenter)  # 居中对齐
 
-        self.info_layout1.addWidget(self.label_2)
-        self.info_layout1.addWidget(self.label_10)
-        self.info_layout1.addStretch()
-        self.control_layout.addWidget(self.info_card1)
+        self.info_layout1.addWidget(self.label_2, 1)  # 添加拉伸因子
+        self.info_layout1.addWidget(self.label_10, 1)  # 添加拉伸因子
+        self.control_layout.addWidget(self.info_card1, 1)  # 卡片可拉伸
 
-        # 检测信息卡片
+        # 为其他卡片做同样修改...
         self.info_card2 = QFrame()
         self.info_card2.setStyleSheet(card_style)
-        self.info_card2.setMinimumWidth(430)
         self.info_layout2 = QHBoxLayout(self.info_card2)
+        self.info_layout2.setContentsMargins(10, 5, 10, 5)  # 减少边距
 
         self.label_3 = QLabel("眨眼次数：0")
         self.label_3.setStyleSheet("font-weight: bold; color: #6c757d; font-size: 18px;")
+        self.label_3.setAlignment(Qt.AlignCenter)  # 居中对齐
+
         self.label_4 = QLabel("哈欠次数：0")
         self.label_4.setStyleSheet("font-weight: bold; color: #6c757d; font-size: 18px;")
+        self.label_4.setAlignment(Qt.AlignCenter)  # 居中对齐
 
-        self.info_layout2.addWidget(self.label_3)
-        self.info_layout2.addWidget(self.label_4)
-        self.info_layout2.addStretch()
-        self.control_layout.addWidget(self.info_card2)
+        self.info_layout2.addWidget(self.label_3, 1)  # 添加拉伸因子
+        self.info_layout2.addWidget(self.label_4, 1)  # 添加拉伸因子
+        self.control_layout.addWidget(self.info_card2, 1)  # 卡片可拉伸
 
         # 性能信息卡片
         self.info_card3 = QFrame()
         self.info_card3.setStyleSheet(card_style)
         self.info_layout3 = QHBoxLayout(self.info_card3)
-        self.info_card3.setMinimumWidth(430)
+        self.info_layout3.setContentsMargins(10, 5, 10, 5)  # 减少边距
 
         self.label_5 = QLabel("行为检测：")
         self.label_5.setStyleSheet("font-weight: bold; font-size: 18px;")
+        self.label_5.setAlignment(Qt.AlignCenter)  # 居中对齐
+
         self.label_9 = QLabel("正常驾驶")
         self.label_9.setStyleSheet("color: #008000; font-size: 18px;")
+        self.label_9.setAlignment(Qt.AlignCenter)  # 居中对齐
 
-        self.info_layout3.addWidget(self.label_5)
-        self.info_layout3.addWidget(self.label_9)
-        self.info_layout3.addStretch()
-        self.control_layout.addWidget(self.info_card3)
+        self.info_layout3.addWidget(self.label_5, 1)  # 添加拉伸因子
+        self.info_layout3.addWidget(self.label_9, 1)  # 添加拉伸因子
+        self.control_layout.addWidget(self.info_card3, 1)  # 卡片可拉伸
 
         # 统计信息卡片
         self.stats_card = QFrame()
         self.stats_card.setStyleSheet(card_style)
         self.stats_layout = QHBoxLayout(self.stats_card)
+        self.stats_layout.setContentsMargins(10, 5, 10, 5)  # 减少边距
 
         self.label_6 = QLabel("手机")
-        self.label_6.setStyleSheet("font-weight: bold; color: #6c757d; font-size: 18px;")
+        self.label_6.setStyleSheet("font-weight: bold; color: #6c757d; font-size: 18px; ")
+        self.label_6.setAlignment(Qt.AlignCenter)  # 居中对齐
+
         self.label_7 = QLabel("抽烟")
-        self.label_7.setStyleSheet("font-weight: bold; color: #6c757d; font-size: 18px;")
+        self.label_7.setStyleSheet("font-weight: bold; color: #6c757d; font-size: 18px; ")
+        self.label_7.setAlignment(Qt.AlignCenter)  # 居中对齐
+
         self.label_8 = QLabel("喝水")
-        self.label_8.setStyleSheet("font-weight: bold; color: #6c757d; font-size: 18px;")
+        self.label_8.setStyleSheet("font-weight: bold; color: #6c757d; font-size: 18px; ")
+        self.label_8.setAlignment(Qt.AlignCenter)  # 居中对齐
 
-        self.stats_layout.addWidget(self.label_6)
-        self.stats_layout.addWidget(self.label_7)
-        self.stats_layout.addWidget(self.label_8)
-        self.control_layout.addWidget(self.stats_card)
+        self.stats_layout.addWidget(self.label_6, 1)  # 添加拉伸因子
+        self.stats_layout.addWidget(self.label_7, 1)  # 添加拉伸因子
+        self.stats_layout.addWidget(self.label_8, 1)  # 添加拉伸因子
+        self.control_layout.addWidget(self.stats_card, 1)  # 卡片可拉伸
 
+        # 速度显示卡片
+        self.speed_card = QFrame()
+        self.speed_card.setStyleSheet(card_style)
+        self.speed_layout = QHBoxLayout(self.speed_card)
+        self.speed_layout.setContentsMargins(10, 5, 10, 5)  # 减少边距
+
+        self.label_speed_text = QLabel("车速：")
+        self.label_speed_text.setStyleSheet("font-weight: bold; font-size: 18px;")
+        self.label_speed_text.setAlignment(Qt.AlignCenter)  # 居中对齐
+
+        self.label_speed_value = QLabel("0 km/h")
+        self.label_speed_value.setStyleSheet("color: #6c757d; font-size: 18px;")
+        self.label_speed_value.setAlignment(Qt.AlignCenter)  # 居中对齐
+
+        self.speed_layout.addWidget(self.label_speed_text, 1)  # 添加拉伸因子
+        self.speed_layout.addWidget(self.label_speed_value, 1)  # 添加拉伸因子
+        self.control_layout.addWidget(self.speed_card, 1)  # 卡片可拉伸
         # 日志区域
         self.log_title = QLabel("💻 系统日志")
         self.log_title.setStyleSheet("""
@@ -549,7 +603,74 @@ class Ui_MainWindow(object):
         layout.addWidget(self.perclos_plot_widget)
         layout.addStretch()
 
+        # 📈 车速趋势图初始化
+        self.speed_x = []
+        self.speed_y = []
+
+        self.speed_plot_widget = pg.PlotWidget()
+        self.speed_plot_widget.setBackground('w')
+        self.speed_plot_widget.setTitle("车速趋势图", color='#34495e', size='18pt')
+        self.speed_plot_widget.setLabel('left', '速度 (km/h)', color='#2c3e50', size='12pt')
+        self.speed_plot_widget.setLabel('bottom', '时间点', color='#2c3e50', size='12pt')
+        self.speed_plot_widget.showGrid(x=True, y=True)
+        self.speed_plot_widget.setYRange(0, 120)
+        # self.speed_plot_widget.setXRange(0, 20)
+        self.speed_plot_widget.setXRange(0,20)
+        self.speed_plot_widget.getAxis('bottom').setTickSpacing(levels=[(1, 0)])
+
+
+        self.speed_curve = self.speed_plot_widget.plot(pen=pg.mkPen(color='b', width=2))
+
+
+        # 添加红色阈值线（超速判断参考线）
+        threshold_line = pg.InfiniteLine(pos=80, angle=0, pen=pg.mkPen(color='r', style=Qt.DashLine))
+        self.speed_plot_widget.addItem(threshold_line)
+
+
+        layout.addWidget(self.speed_plot_widget)
+
         return page
+
+    @Slot(float)
+    def update_speed(self, speed_val: float):
+        """更新速度显示与趋势图"""
+        self.label_speed_value.setText(f"{speed_val:.2f} km/h")
+
+        # 设置字体颜色和报警
+        if speed_val > 80:
+            self.label_speed_value.setStyleSheet("color: red; font-size: 18px;")
+
+            alarm_msg = f"{datetime.datetime.now().strftime('%H:%M:%S')} - 车速过快 - 当前：{speed_val:.1f} km/h"
+
+            # 初始化
+            pygame.mixer.init()
+            # 加载音频
+            sound = pygame.mixer.Sound("resources/audio/alarm_80.mp3")
+            # 播放3次（含原声，共播放3次）
+            sound.play(loops=2)
+
+            if hasattr(self, "alert_list"):
+                self.alert_list.addItem(alarm_msg)
+        else:
+            self.label_speed_value.setStyleSheet("color: #007bff; font-size: 18px;")
+
+        # 更新图表,x 随调用次数增加
+        self.speed_x.append(self.speed_counter)
+        self.speed_y.append(speed_val)
+        self.speed_counter += 1
+
+        if len(self.speed_x) > 20:
+            self.speed_x = self.speed_x[1:]
+            self.speed_y = self.speed_y[1:]
+
+        # 设置动态 X 范围
+        if self.speed_x:
+            self.speed_plot_widget.setXRange(self.speed_x[0], self.speed_x[-1])
+
+        if hasattr(self, 'speed_curve'):
+            self.speed_curve.setData(self.speed_x, self.speed_y)
+
+
 
     def create_history_page(self):
         """创建历史记录页面"""

@@ -1,18 +1,36 @@
-import pygame
+import socket
+import threading
 import time
+import random
 
-# 初始化
-pygame.mixer.init()
+def handle_client(conn, addr):
+    print(f"[连接] 客户端已连接: {addr}")
+    try:
+        while True:
+            speed = round(random.uniform(30, 90), 2)  # 模拟速度值
+            message = f"{speed}\n"
+            conn.sendall(message.encode())
+            print(f"[发送] {message.strip()}")
+            time.sleep(1)  # 每隔 5 秒发送一次
+    except (ConnectionResetError, BrokenPipeError):
+        print(f"[断开] 客户端 {addr} 断开连接")
+    finally:
+        conn.close()
 
-# 加载音频
-sound = pygame.mixer.Sound("resources/audio/alarm_80.mp3")
+def start_server(host='127.0.0.1', port=12345):
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((host, port))
+    server.listen(5)
+    print(f"[启动] TCP服务器正在监听 {host}:{port}")
+    try:
+        while True:
+            conn, addr = server.accept()
+            client_thread = threading.Thread(target=handle_client, args=(conn, addr), daemon=True)
+            client_thread.start()
+    except KeyboardInterrupt:
+        print("\n[关闭] 手动停止服务器")
+    finally:
+        server.close()
 
-# 播放3次（含原声，共播放3次）
-sound.play(loops=2)
-
-# 主线程继续执行，不阻塞
-# 如果需要保持主线程一段时间以听到声音：
-while True:
-    print("lala")
-
-time.sleep(5)
+if __name__ == "__main__":
+    start_server()
