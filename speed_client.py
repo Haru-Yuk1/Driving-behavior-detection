@@ -1,17 +1,18 @@
 import socket
 import time
-
 from PySide2 import QtCore
+
 ################################################################################
 ## 获取速度
 ################################################################################
 class SpeedClientThread(QtCore.QThread):
-    speed_signal = QtCore.Signal(float)  # 定义信号
-    aggressive_signal = QtCore.Signal(bool)  # 新增激进驾驶信号
-    collision_signal = QtCore.Signal(bool)  # 新增碰撞信号
+    speed_signal = QtCore.Signal(float)         # 定义速度信号
+    aggressive_signal = QtCore.Signal(bool)     # 定义激进驾驶信号
+    collision_signal = QtCore.Signal(bool)      # 定义碰撞信号
 
-    # server_ip='172.20.10.5'
-    server_ip='127.0.0.1'
+    server_ip = '172.20.10.5'
+    # server_ip = '127.0.0.1'
+
     def __init__(self, ui, server_ip=server_ip, port=12345):
         super().__init__(parent=ui)
         self.server_ip = server_ip
@@ -33,22 +34,29 @@ class SpeedClientThread(QtCore.QThread):
                     if not data:
                         print("[断开] 服务器断开连接")
                         break
+
                     msg = data.decode().strip()
                     print(f"[接收] {msg}")
 
-                    # 解析 speed 和 aggressive
+                    # 初始化默认值
+                    speed_val = None
+                    aggressive_flag = None
+                    collision_flag = None
+
                     try:
                         parts = msg.split(";")
-                        speed_val = None
-                        aggressive_flag = None
-
                         for part in parts:
-                            if part.startswith("speed:"):
-                                speed_val = float(part.split(":")[1])
-                            elif part.startswith("aggressive:"):
-                                aggressive_flag = part.split(":")[1].strip() in ["1", "true", "True"]
-                            elif part.startswith("collision:"):
-                                collision_flag = part.split(":")[1].strip() in ["1", "true", "True"]
+                            key_value = part.split(":", 1)
+                            if len(key_value) != 2:
+                                continue
+                            key, value = key_value[0].strip(), key_value[1].strip()
+
+                            if key == "speed":
+                                speed_val = float(value)
+                            elif key == "aggressive":
+                                aggressive_flag = value.lower() in ["1", "true"]
+                            elif key == "collision":
+                                collision_flag = value.lower() in ["1", "true"]
 
                         # ✅ 发射信号
                         if speed_val is not None:

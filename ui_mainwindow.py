@@ -849,7 +849,7 @@ class Ui_MainWindow(object):
                 # 加载音频
                 sound = pygame.mixer.Sound("resources/audio/alarm_80.mp3")
                 # 播放3次（含原声，共播放3次）
-                sound.play(loops=2)
+                sound.play(loops=1)
 
 
             if hasattr(self, "alert_list"):
@@ -920,7 +920,7 @@ class Ui_MainWindow(object):
             # 报警提示
             if not pygame.mixer.get_busy():
                 sound = pygame.mixer.Sound("resources/audio/alarm_80.mp3")
-                sound.play(loops=2)
+                sound.play(loops=1)
 
             # 添加报警列表记录
             if hasattr(self, "alert_list"):

@@ -18,7 +18,7 @@ import pygame
 import time
 
 from speed_client import SpeedClientThread  # 如果你放在 speed_client.py 中
-from model import init_db
+from model import init_db, User
 
 from model import SessionLocal, FatigueRecord
 
@@ -50,6 +50,87 @@ Rollmouth = 0  #循环内打哈欠数
 Epoch = 1  # 轮次计数器
 
 isAlertOn = True  # 是否开启报警音频
+
+from PySide2.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton
+from model import SessionLocal, User
+
+class LoginDialog(QDialog):
+    def __init__(self, parent=None):
+        super(LoginDialog, self).__init__(parent)
+        self.setWindowTitle("登录 / 注册")
+        self.setFixedSize(520, 340)
+
+        self.valid = False
+        self.username = ""
+
+        self.setStyleSheet("""
+            QDialog { background-color: #f5f6fa; }
+            QLabel { font-size: 14px; }
+            QLineEdit { padding: 5px; font-size: 14px; }
+            QPushButton {
+                padding: 6px; font-size: 14px;
+                background-color: #3498db; color: white; border-radius: 6px;
+            }
+            QPushButton:hover { background-color: #2980b9; }
+        """)
+
+        layout = QVBoxLayout(self)
+
+        self.username_edit = QLineEdit()
+        self.username_edit.setPlaceholderText("用户名")
+        self.password_edit = QLineEdit()
+        self.password_edit.setPlaceholderText("密码")
+        self.password_edit.setEchoMode(QLineEdit.Password)
+
+        self.login_button = QPushButton("登录")
+        self.register_button = QPushButton("注册")
+        self.status_label = QLabel("")
+
+        layout.addWidget(QLabel("请输入用户名和密码："))
+        layout.addWidget(self.username_edit)
+        layout.addWidget(self.password_edit)
+        layout.addWidget(self.login_button)
+        layout.addWidget(self.register_button)
+        layout.addWidget(self.status_label)
+
+        self.login_button.clicked.connect(self.try_login)
+        self.register_button.clicked.connect(self.try_register)
+
+    def try_login(self):
+        session = SessionLocal()
+        user = session.query(User).filter_by(
+            username=self.username_edit.text().strip(),
+            password=self.password_edit.text().strip()
+        ).first()
+        session.close()
+
+        if user:
+            self.valid = True
+            self.username = user.username
+            self.accept()
+        else:
+            self.status_label.setText("❌ 登录失败：用户名或密码错误")
+
+    def try_register(self):
+        username = self.username_edit.text().strip()
+        password = self.password_edit.text().strip()
+        if not username or not password:
+            self.status_label.setText("❌ 注册失败：用户名和密码不能为空")
+            return
+
+        session = SessionLocal()
+        existing = session.query(User).filter_by(username=username).first()
+        if existing:
+            self.status_label.setText("❌ 用户已存在")
+        else:
+            new_user = User(username=username, password=password)
+            session.add(new_user)
+            session.commit()
+            self.status_label.setText("✅ 注册成功，请点击登录")
+        session.close()
+
+    def get_credentials(self):
+        return self.username_edit.text(), self.password_edit.text()
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -227,7 +308,7 @@ class CamConfig:
                         # 加载音频
                         sound = pygame.mixer.Sound("resources/audio/alarm_80.mp3")
                         # 播放3次（含原声，共播放3次）
-                        sound.play(loops=2)
+                        sound.play(loops=1)
 
                     Ui_MainWindow.printf(window, "")
                     # 添加报警记录到 UI 报警列表
@@ -272,11 +353,18 @@ def CamConfig_init():
 
 
 if __name__ == '__main__':
+
     app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow()
-    window.window_init()
-    window.show()
+    init_db()  # 确保数据库和表存在
 
-    sys.exit(app.exec_())
+    login_dialog = LoginDialog()
+    if login_dialog.exec_() == QtWidgets.QDialog.Accepted and login_dialog.valid:
+        username, _ = login_dialog.get_credentials()
+        print(f"✅ 登录成功，当前用户：{username}")
 
-    window.alert_list.addItem(f"{datetime.now().strftime('%H:%M:%S')} - 疲劳警报触发")
+        window = MainWindow()
+        window.window_init()
+        window.show()
+        sys.exit(app.exec_())
+    else:
+        sys.exit()

@@ -18,6 +18,13 @@ class SpeedRecord(Base):
     timestamp = Column(DateTime, default=datetime.now)
     speed = Column(Float)
 
+class User(Base):
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True)
+    username = Column(String, unique=True)
+    password = Column(String)
+
 #  MySQL 配置
 DATABASE_URL = "mysql+pymysql://driving_user:123456@localhost:3306/driving_detection?charset=utf8mb4"
 
